@@ -12,6 +12,8 @@ Left click and hold a window's title bar to drag.
 
 Left click and hold the bottom right of a window to resize it.
 
+Left click and hold empty space to pan around.
+
 
 # Sample
 ![olcGuiDemo](https://i.imgur.com/jZKbZGL.png)
