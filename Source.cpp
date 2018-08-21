@@ -2,6 +2,13 @@
 
 class olcWindow
 {
+private:
+	struct Node
+	{
+		short x = 0;
+		short y = 0;
+	};
+
 public:
 	olcWindow()
 	{
@@ -16,6 +23,17 @@ public:
 	short width = 30;
 	short height = 20;
 	short headerSize = 3;
+	
+	Node nodeIn;
+	Node nodeOut;
+
+	void repositionNodes()
+	{
+		nodeIn.x = this->x - 1;
+		nodeIn.y = this->y + height / 2;
+		nodeOut.x = this->x + width + 1;
+		nodeOut.y = this->y + height / 2;
+	}
 };
 
 class olcSynthGui : public olcConsoleGameEngine
@@ -41,11 +59,14 @@ private:
 			else if (s->y + panOffsetY > scrHght_1) // below
 				DrawLine(s->x + panOffsetX, scrHght_1, s->x + s->width + panOffsetX, scrHght_1, PIXEL_HALF, FG_GREEN);
 
-			// not outside, try to draw the whole window
-			else if (std::next(s) == ws.end())
+			// Try to draw the whole window
+			if (std::next(s) == ws.end())
 				DrawWindow(*s, PIXEL_SOLID, FG_WHITE); 
 			else
+			{
 				DrawWindow(*s, PIXEL_HALF, FG_GREY);
+				DrawLink(*s, *std::next(s));
+			}
 		}
 	}
 
@@ -66,9 +87,35 @@ private:
 		DrawLine(w.x + 1, w.y + w.headerSize, w.x + w.width - 1, w.y + w.headerSize, glyph, colour); //header bottom
 		DrawLine(w.x + 1, w.y + w.height, w.x + w.width - 1, w.y + w.height, glyph, colour); //bottom
 
+		DrawNodes(w, PIXEL_SOLID, FG_RED, FG_YELLOW);
+	}
+
+	void DrawNodes(olcWindow &w, short glyph, short colourIn, short colourOut)
+	{
+		w.repositionNodes();
+		// Node in (left)
+		Draw(w.nodeIn.x, w.nodeIn.y - 1, glyph, colourIn);
+		Draw(w.nodeIn.x - 1, w.nodeIn.y, glyph, colourIn);
+		Draw(w.nodeIn.x, w.nodeIn.y + 1, glyph, colourIn);
+
+		// Node out (right)
+		Draw(w.nodeOut.x, w.nodeOut.y - 1, glyph, colourOut);
+		Draw(w.nodeOut.x + 1, w.nodeOut.y, glyph, colourOut);
+		Draw(w.nodeOut.x, w.nodeOut.y + 1, glyph, colourOut);
+	}
+
+	void DrawLink(olcWindow &w_a, olcWindow &w_b)
+	{
+		DrawLine(w_a.nodeOut.x,
+			w_a.nodeOut.y,
+			w_b.nodeIn.x + panOffsetX,
+			w_b.nodeIn.y + panOffsetY,
+			PIXEL_SOLID, FG_BLUE);
 	}
 
 public:
+	
+
 	std::vector<olcWindow> windows;
 	olcWindow myFirstWindow;
 
@@ -94,7 +141,6 @@ public:
 
 		windows.push_back(myFirstWindow);
 		DrawWindows(windows);
-
 		return true;
 	}
 
@@ -132,6 +178,8 @@ public:
 		tempWnd.x = m_mousePosX - panOffsetX;
 		tempWnd.y = m_mousePosY - panOffsetY;
 		windows.push_back(tempWnd);
+
+		windows.back().repositionNodes();
 	}
 
 	void ResizeActiveWindow()
@@ -141,12 +189,16 @@ public:
 
 		if (m_mousePosX - panOffsetX - windows.back().x > 10)
 			windows.back().width = m_mousePosX - panOffsetX - windows.back().x;
+
+		windows.back().repositionNodes();
 	}
 
 	void SetPositionActiveWindow()
 	{
 		windows.back().x = m_mousePosX - dragOffsetX;
 		windows.back().y = m_mousePosY - dragOffsetY;
+
+		windows.back().repositionNodes();
 	}
 
 	bool CheckMouseEvent()
